@@ -6,9 +6,16 @@ module Sidekiq
 
       attr_reader :tracer, :opts
 
-      def initialize(tracer: nil, opts: {})
-        @tracer = tracer
-        @opts = opts
+      if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('2.7.0')
+        def initialize(args)
+          @tracer = args[:tracer]
+          @opts = args.fetch(:opts, {})
+        end
+      else
+        def initialize(tracer: nil, opts: {})
+          @tracer = tracer
+          @opts = opts
+        end
       end
 
       def call(worker_class, job, queue, redis_pool)
