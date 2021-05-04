@@ -25,9 +25,14 @@ module Sidekiq
         inject(scope.span, job) if opts.fetch(:propagate_context, true)
         yield
       rescue Exception => e
-        if scope
+        if scope&.span.respond_to?(:record_exception)
+          # SignalFx custom error analyzer
           scope.span.record_exception(e)
+        elsif scope&.span
+          scope.span.set_tag('error', true)
+          scope.span.log_kv(event: 'error', :'error.object' => e)
         end
+
         raise
       ensure
         scope.close if scope
